@@ -11,7 +11,7 @@ Subject: [PATCH] arm64: dts: qcom: cq8725s: configure the Odin 3 gamepad and DP 
  		};
  	};
  
-@@  -182,5 +182,21 @@
+@@ -182,5 +182,21 @@
  			platform {
  				sound-dai = <&q6apm>;
  			};
@@ -33,7 +33,6 @@ Subject: [PATCH] arm64: dts: qcom: cq8725s: configure the Odin 3 gamepad and DP 
 +			};
 +		};
  	};
- 
 @@ -1390,6 +1390,9 @@
  
  	gamepad {
