@@ -11,7 +11,7 @@ Subject: [PATCH] arm64: dts: qcom: cq8725s: configure the Odin 3 gamepad and DP 
  		};
  	};
  
-@@ -182,6 +182,22 @@
+@@ -182,8 +182,24 @@
  			platform {
  				sound-dai = <&q6apm>;
  			};
@@ -34,6 +34,8 @@ Subject: [PATCH] arm64: dts: qcom: cq8725s: configure the Odin 3 gamepad and DP 
 +		};
  	};
  
+ 	pmic-glink {
+ 		compatible = "qcom,sm8750-pmic-glink",
 @@ -1390,6 +1390,9 @@
  
  	gamepad {
