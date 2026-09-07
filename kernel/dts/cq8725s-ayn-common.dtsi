@@ -130,7 +130,7 @@
 		assigned-clock-rates = <1536000>;
 
 		model = "SM8750-AYN";
-		audio-routing = 
+		audio-routing =
 				"IN1_HPHL", "HPHL_OUT",
 				"IN2_HPHR", "HPHR_OUT",
 				"AMIC2", "MIC BIAS2",
@@ -982,8 +982,10 @@
 };
 
 &pcieport0 {
-	wake-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
+	supports-clkreq;
+	perst-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
 	reset-gpios = <&tlmm 102 GPIO_ACTIVE_LOW>;
+	clkreq-gpios = <&tlmm 103 GPIO_ACTIVE_HIGH>;
 
 	wifi@0 {
 		compatible = "pci17cb,110e";
@@ -998,6 +1000,8 @@
 		vddrfa1p8-supply = <&vreg_pmu_rfa_1p8>;
 		vddpcie0p9-supply = <&vreg_pmu_pcie_0p9>;
 		vddpcie1p8-supply = <&vreg_pmu_pcie_1p8>;
+
+		wakeup-source;
 	};
 };
 
