@@ -983,9 +983,8 @@
 
 &pcieport0 {
 	supports-clkreq;
-	perst-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
+	wake-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
 	reset-gpios = <&tlmm 102 GPIO_ACTIVE_LOW>;
-	clkreq-gpios = <&tlmm 103 GPIO_ACTIVE_HIGH>;
 
 	wifi@0 {
 		compatible = "pci17cb,110e";
