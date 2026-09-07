@@ -971,6 +971,16 @@
 	pinctrl-0 = <&pcie0_default_state>;
 	pinctrl-names = "default";
 
+	/* 1. Wipe out the old, problematic 3-entry array from sm8750.dtsi */
+	/delete-property/ ranges;
+
+	/* 2. Define the new, safe 32-bit restricted windows */
+	ranges = <0x01000000 0x0 0x00000000 0x0 0x40200000 0x0 0x100000>,
+		 <0x02000000 0x0 0x40300000 0x0 0x40300000 0x0 0x1fd00000>;
+	vdda-supply = <&vreg_l1f_0p88>;
+	vddpe-3v3-supply = <&vdd_mcu_3v3>;
+	pcie_aspm = <0x3>;
+
 	status = "okay";
 };
 
