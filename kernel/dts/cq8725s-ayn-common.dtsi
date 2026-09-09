@@ -30,8 +30,8 @@
 		compatible = "qcom,wcd9395-codec", "qcom,wcd9390-codec";
 
 		pinctrl-0 = <&wcd_default>;
-		pinctrl-1 = <&wcd_sleep>;
-		pinctrl-names = "default", "sleep";
+		// pinctrl-1 = <&wcd_sleep>;
+		pinctrl-names = "default";
 
 		qcom,micbias1-microvolt = <1800000>;
 		qcom,micbias2-microvolt = <1800000>;
@@ -98,9 +98,9 @@
 
 		#cooling-cells = <2>;
 		cooling-levels = <0 30 45 60 70 90 120 150>;
-		pinctrl-names = "default", "sleep";
+		pinctrl-names = "default";
 		pinctrl-0 = <&fan_pwm_default>;
-		pinctrl-1 = <&fan_pwm_sleep>;
+		// pinctrl-1 = <&fan_pwm_sleep>;
 	};
 
 	gpio-keys {
@@ -884,9 +884,6 @@
 		awinic,audio-channel = <1>;
 		awinic,sync-flag;
 		sound-name-prefix = "SPK_L";
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&spk_amp_default>; /* Active state during normal operation */
-		pinctrl-1 = <&spk_amp_sleep>;   /* Low-power state during suspend */
 	};
 
 	spk_amp_r: spk_amp_r@35 {
@@ -897,9 +894,6 @@
 		awinic,audio-channel = <0>;
 		awinic,sync-flag;
 		sound-name-prefix = "SPK_R";
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&spk_amp_default>; /* Active state during normal operation */
-		pinctrl-1 = <&spk_amp_sleep>;   /* Low-power state during suspend */
 	};
 
 	typec_mux_redriver: typec-mux@1c {
@@ -1035,12 +1029,12 @@
 		power-source = <1>;
 	};
 
-	fan_pwm_sleep: fan-pwm-sleep-state {
-		pins = "gpio8";
-		function = "gpio";
-		input-enable;
-		bias-pull-down;
-	};
+	// fan_pwm_sleep: fan-pwm-sleep-state {
+	// 	pins = "gpio8";
+	// 	function = "gpio";
+	// 	input-enable;
+	// 	bias-pull-down;
+	// };
 
 	volume_up_n: volume-up-n-state {
 		pins = "gpio6";
@@ -1369,6 +1363,7 @@
 		bias-pull-down;
 	};
 
+	// mcu sleep
 	mcu_en_sleep: mcu-en-sleep-state {
 		pins = "gpio85";
 		function = "gpio";
@@ -1405,6 +1400,7 @@
 		bias-pull-down;
 	};
 
+	// wlan sleep
 	wlan_sleep: wlan-sleep-state {
 		pins = "gpio16";
 		function = "gpio";
@@ -1415,22 +1411,6 @@
 	/* Add sleep state for WCD reset pin */
 	wcd_sleep: wcd-reset-n-sleep-state {
 		pins = "gpio101";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-
-	/* Active state for normal operation */
-	spk_amp_default: spk-amp-default-state {
-		pins = "gpio126", "gpio128";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	/* Low-power state for system suspend */
-	spk_amp_sleep: spk-amp-sleep-state {
-		pins = "gpio126", "gpio128";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
