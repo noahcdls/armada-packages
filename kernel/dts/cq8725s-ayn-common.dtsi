@@ -30,7 +30,6 @@
 		compatible = "qcom,wcd9395-codec", "qcom,wcd9390-codec";
 
 		pinctrl-0 = <&wcd_default>;
-		// pinctrl-1 = <&wcd_sleep>;
 		pinctrl-names = "default";
 
 		qcom,micbias1-microvolt = <1800000>;
@@ -98,9 +97,8 @@
 
 		#cooling-cells = <2>;
 		cooling-levels = <0 30 45 60 70 90 120 150>;
-		pinctrl-names = "default", "sleep";
+		pinctrl-names = "default";
 		pinctrl-0 = <&fan_pwm_default>;
-		pinctrl-1 = <&fan_pwm_sleep>;
 	};
 
 	gpio-keys {
@@ -1027,14 +1025,6 @@
 		power-source = <1>;
 	};
 
-	fan_pwm_sleep: fan-pwm-sleep-state {
-		pins = "gpio8";
-		function = "normal";
-		input-enable;
-		bias-pull-down;
-		power-source = <1>;
-	};
-
 	volume_up_n: volume-up-n-state {
 		pins = "gpio6";
 		function = "normal";
@@ -1349,26 +1339,10 @@
 		};
 	};
 
-	i2s1_sleep: i2s1-sleep-state {
-		pins = "gpio121", "gpio122", "gpio123", "gpio124";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-
 	mcu_en_default: mcu-en-default-state {
 		pins = "gpio85";
 		function = "gpio";
 		bias-pull-down;
-	};
-
-	// mcu sleep
-	mcu_en_sleep: mcu-en-sleep-state {
-		pins = "gpio85";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-		output-low;
 	};
 
 	mcu_pwr_default: mcu-pwr-default-state {
@@ -1400,40 +1374,6 @@
 		drive-strength = <8>;
 		bias-pull-down;
 	};
-
-	// wlan sleep
-	wlan_sleep: wlan-sleep-state {
-		pins = "gpio16";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-
-	/* Add sleep state for WCD reset pin */
-	wcd_sleep: wcd-reset-n-sleep-state {
-		pins = "gpio101";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-
-	qup_uart15_sleep: qup-uart15-sleep-state {
-		tx-pins {
-			pins = "gpio30";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-			output-low;
-		};
-
-		rx-pins {
-			pins = "gpio31";
-			function = "gpio";
-			drive-strength = <2>;
-			input-enable;
-			bias-pull-down;
-		};
-	};
 };
 
 &uart7 {
@@ -1459,8 +1399,6 @@
 };
 
 &uart15 {
-	pinctrl-1 = <&qup_uart15_sleep>;
-	pinctrl-names = "default", "sleep";
 	status = "okay";
 
 	gamepad {
@@ -1475,8 +1413,7 @@
 		vdd-supply = <&vdd_mcu_3v3>;
 		enable-gpios = <&tlmm 85 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&mcu_en_default>;
-		pinctrl-1 = <&mcu_en_sleep>;
-		pinctrl-names = "default", "sleep";
+		pinctrl-names = "default";
 	};
 };
 
