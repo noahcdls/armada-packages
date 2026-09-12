@@ -35,7 +35,7 @@ diff --git a/drivers/tty/serial/qcom_geni_serial.c b/drivers/tty/serial/qcom_gen
 +++ b/drivers/tty/serial/qcom_geni_serial.c
 @@ -1956,6 +1956,23 @@
  	struct qcom_geni_private_data *private_data = uport->private_data;
-
+ 
  	/*
 +	 * A peer that keeps streaming into a non-console geni UART across the
 +	 * suspend teardown (e.g. the gamepad MCU on irq 190) storms the RX IRQ
@@ -59,7 +59,7 @@ diff --git a/drivers/tty/serial/qcom_geni_serial.c b/drivers/tty/serial/qcom_gen
  	 */
 @@ -1974,6 +1991,9 @@
  	struct qcom_geni_private_data *private_data = uport->private_data;
-
+ 
  	ret = uart_resume_port(private_data->drv, uport);
 +	/* Balance the disable_irq() taken in qcom_geni_serial_suspend(). */
 +	if (!uart_console(uport))
