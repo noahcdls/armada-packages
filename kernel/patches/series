@@ -157,6 +157,8 @@ v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
 0044-clk-qcom-gcc-sm8750-Do-not-turn-off-PCIe-GDSCs-durin.patch
 0045-Bluetooth-qca-add-WCN7860-support.patch
 0066-scsi-ufs-ufs-qcom-add-sm8750-compatible.patch
+0203-thermal-qcom-tsens-skip-sm8550-uplow-wake-irq.patch
+0218-regulator-qcom-rpmh-add-suspend-state-support.patch
 0509-soc-qcom-pmic_glink_altmode-defer-until-mux-switch-ready.patch
 0517-usb-typec-mux-dont-swallow-EPROBE_DEFER.patch
 0519-usb-typec-ucsi-clear-USB-role.patch
@@ -167,3 +169,12 @@ v2_20260420_neil_armstrong_arm64_qcom_sm8650_misc_enhancements.patch
 0074-soundwire-qcom-PCM-data-port-format-enable.patch
 0612-ROCKNIX-odin3-q6apm-start-mi2s-port-at-prepare.patch
 0613-ASoC-q6apm-scope-prepare-start-to-MI2S.patch
+1007-scsi-ufs-qcom-propagate-hibern8-exit-failure-clk-scale.patch
+1008-scsi-ufs-qcom-auto-hibern8-clk-gating-collision.patch
+1009-scsi-ufs-recover-hibern8-enter-clk-gating.patch
+1010-scsi-ufs-qcom-keep-mphy-powered-on-hibern8-park.patch
+1011-scsi-ufs-hold-clk-gating-across-system-pm.patch
+1015-ufs-qcom-disable-rx-linecfg-after-link-startup.patch
+1016-leds-qcom-lpg-restore-led-state-across-suspend.patch
+1017-wifi-ath12k-let-a-pending-firmware-restart-finish-be.patch
+1018-wifi-ath12k-warn-when-the-system-sleeps-with-the-dev.patch

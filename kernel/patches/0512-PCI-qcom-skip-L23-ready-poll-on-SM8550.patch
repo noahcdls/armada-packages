@@ -26,3 +26,38 @@ i.MX6 uses.
  	ret = qcom_pcie_parse_ports(pcie);
  	if (ret) {
  		if (ret != -ENODEV) {
+@@ -449,7 +449,7 @@ static int ufs_qcom_host_reset(struct ufs_hba *hba)
+ 	if (ret) {
+ 		dev_err(hba->dev, "%s: core_reset assert failed, err = %d\n",
+ 				 __func__, ret);
+-		return ret;
++		goto out;
+ 	}
+
+ 	/*
+@@ -463,15 +463,23 @@ static int ufs_qcom_host_reset(struct ufs_hba *hba)
+ 	if (ret) {
+ 		dev_err(hba->dev, "%s: core_reset deassert failed, err = %d\n",
+ 				 __func__, ret);
+-		return ret;
++		goto out;
+ 	}
+
+ 	usleep_range(1000, 1100);
+
++	ret = 0;
++out:
++	/*
++	 * Re-enable the IRQ on the error exits too, otherwise a reset
++	 * assert/deassert failure leaks the disable and leaves the controller
++	 * IRQ masked. (This path became reachable once ufshcd_disable_irq() stops
++	 * synchronizing during PM resume.)
++	 */
+ 	if (reenable_intr)
+ 		ufshcd_enable_irq(hba);
+
+-	return 0;
++	return ret;
+ }
+
+ static u32 ufs_qcom_get_hs_gear(struct ufs_hba *hba)
