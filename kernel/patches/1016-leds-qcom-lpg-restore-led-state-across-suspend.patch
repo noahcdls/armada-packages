@@ -15,8 +15,8 @@ would leave the LED dark seconds before the system actually sleeps.
 
 Signed-off-by: Edouard Durand <edouard.durand@gmail.com>
 ---
---- a/drivers/leds/rgb/leds-qcom-lpg.c	2026-08-25 21:19:43.621064255 +0800
-+++ b/drivers/leds/rgb/leds-qcom-lpg.c	2026-08-25 21:19:47.434754677 +0800
+--- a/leds-qcom-lpg.c	2026-08-25 21:19:43.621064255 +0800
++++ b/leds-qcom-lpg.c	2026-08-25 21:19:47.434754677 +0800
 @@ -162,6 +162,8 @@
  	struct led_classdev cdev;
  	struct led_classdev_mc mcdev;
