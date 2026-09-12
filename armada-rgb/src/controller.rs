@@ -28,6 +28,10 @@ impl Controller {
         Ok(config)
     }
 
+    pub fn is_supported(&self) -> bool {
+        self.backend.unsupported_reason().is_none()
+    }
+
     pub fn set(&self, config: LightingConfig) -> Result<LightingConfig> {
         let mut config: LightingConfig = config.validate()?;
         if config.correction.is_none() {

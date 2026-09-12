@@ -25,9 +25,11 @@ cargo build --release --locked
 
 %install
 install -Dpm 0755 target/release/%{name} %{buildroot}%{_bindir}/%{name}
+install -Dpm 0644 profiles.json %{buildroot}%{_datadir}/%{name}/profiles.json
 
 %files
 %doc README.md
 %{_bindir}/%{name}
+%{_datadir}/%{name}/profiles.json
 
 %changelog

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "models": [
+        "AYN Odin 2 Portal",
+        "AYN Thor",
+        "AYN Thor Lite",
+        "Retroid Pocket 5",
+        "Retroid Pocket 5 Visionox",
+        "Retroid Pocket Flip2",
+        "Retroid Pocket Flip2 Visionox",
+        "Retroid Pocket 6",
+        "Retroid Pocket 6 TOP-DPAD",
+        "Retroid Pocket Nova"
+      ],
+      "backend": {
+        "type": "multicolor",
+        "targets": [
+          "rgb:l1",
+          "rgb:l2",
+          "rgb:l3",
+          "rgb:l4",
+          "rgb:r1",
+          "rgb:r2",
+          "rgb:r3",
+          "rgb:r4"
+        ]
+      }
+    },
+    {
+      "models": ["KONKR Pocket FIT Elite"],
+      "backend": {
+        "type": "multicolor",
+        "targets": ["konkr:rgb:joysticks"]
+      },
+      "correction": {
+        "trigger": "red",
+        "red": 0,
+        "green": 20,
+        "blue": 20
+      }
+    },
+    {
+      "models": ["AYN Odin 3"],
+      "backend": {
+        "type": "channels",
+        "targets": [
+          "red=l:r1",
+          "red=l:r2",
+          "red=l:r3",
+          "red=l:r4",
+          "red=r:r1",
+          "red=r:r2",
+          "red=r:r3",
+          "red=r:r4",
+          "green=l:g1",
+          "green=l:g2",
+          "green=l:g3",
+          "green=l:g4",
+          "green=r:g1",
+          "green=r:g2",
+          "green=r:g3",
+          "green=r:g4",
+          "blue=l:b1",
+          "blue=l:b2",
+          "blue=l:b3",
+          "blue=l:b4",
+          "blue=r:b1",
+          "blue=r:b2",
+          "blue=r:b3",
+          "blue=r:b4"
+        ]
+      }
+    }
+  ]
+}

@@ -8,6 +8,7 @@ pkg="${1:?usage: stage.sh <package>}"
 
 rm -rf ctx && mkdir -p ctx
 case "${pkg}" in
+    steam-bootstrap) mkdir -p ctx/steam-bootstrap && cp steam-bootstrap/out/* ctx/steam-bootstrap/ ;;
     extest)       cp extest/out/libextest.so ctx/ ;;
     lsfg-vk)      cp lsfg-vk/out/liblsfg-vk.so ctx/ ;;
     mesa-android) mkdir -p ctx/waydroid && cp -r mesa-android/out/vendor ctx/waydroid/ ;;

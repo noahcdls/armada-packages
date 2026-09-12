@@ -13,6 +13,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Check whether this device has a lighting profile.
+    Supported,
     /// Show the saved lighting configuration.
     Get,
     /// Set a solid color and brightness.
@@ -36,6 +38,11 @@ fn main() -> Result<()> {
     let controller: Controller = Controller::from_env();
 
     match cli.command {
+        Command::Supported => {
+            if !controller.is_supported() {
+                std::process::exit(1);
+            }
+        }
         Command::Get => {
             let config: LightingConfig = controller.get()?;
             println!("{}", serde_json::to_string_pretty(&config)?);

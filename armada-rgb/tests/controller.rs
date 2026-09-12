@@ -1,4 +1,6 @@
-use armada_rgb::{ChannelBackend, Controller, LightingBackend, LightingConfig, MulticolorBackend};
+use armada_rgb::{
+    ChannelBackend, ColorCorrection, Controller, LightingBackend, LightingConfig, MulticolorBackend,
+};
 use std::fs;
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::path::PathBuf;
@@ -12,6 +14,8 @@ struct Fixture {
     root: PathBuf,
     config: PathBuf,
     leds: PathBuf,
+    model: PathBuf,
+    profiles: PathBuf,
 }
 
 impl Fixture {
@@ -28,11 +32,15 @@ impl Fixture {
         let leds: PathBuf = root.join("leds");
         fs::create_dir_all(&leds).unwrap();
 
-        Self {
+        let fixture = Self {
             config: root.join("etc/rgb.json"),
             leds,
+            model: root.join("model"),
+            profiles: root.join("profiles.json"),
             root,
-        }
+        };
+        fs::write(&fixture.model, b"Test Device\0").unwrap();
+        fixture
     }
 
     fn controller(&self, targets: &[String]) -> Controller {
@@ -64,6 +72,30 @@ impl Fixture {
             .next()
             .unwrap()
             .into()
+    }
+
+    fn command(&self, backend: &str, targets: &[&str], correction: Option<&str>) -> Command {
+        let correction: Option<ColorCorrection> = correction.map(|value| value.parse().unwrap());
+        let catalog = serde_json::json!({
+            "version": 1,
+            "profiles": [{
+                "models": ["Test Device"],
+                "backend": {
+                    "type": backend,
+                    "targets": targets,
+                },
+                "correction": correction,
+            }],
+        });
+        fs::write(&self.profiles, serde_json::to_vec(&catalog).unwrap()).unwrap();
+
+        let mut command = Command::new(env!("CARGO_BIN_EXE_armada-rgb"));
+        command
+            .env("ARMADA_RGB_CONFIG_PATH", &self.config)
+            .env("ARMADA_RGB_SYSFS_ROOT", &self.leds)
+            .env("ARMADA_RGB_MODEL_PATH", &self.model)
+            .env("ARMADA_RGB_PROFILES_PATH", &self.profiles);
+        command
     }
 }
 
@@ -166,13 +198,13 @@ fn cli_supports_channel_backend() {
     for target in ["l:r1", "l:g1", "l:b1"] {
         fixture.channel_target(target, "255");
     }
-    let output: std::process::Output = Command::new(env!("CARGO_BIN_EXE_armada-rgb"))
+    let output: std::process::Output = fixture
+        .command(
+            "channels",
+            &["red=l:r1", "green=l:g1", "blue=l:b1"],
+            Some("always:0,20,20"),
+        )
         .args(["set", "--color", "00ffff", "--brightness", "100"])
-        .env("ARMADA_RGB_CONFIG_PATH", &fixture.config)
-        .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
-        .env("ARMADA_RGB_BACKEND", "channels")
-        .env("ARMADA_RGB_TARGETS", "red=l:r1 green=l:g1 blue=l:b1")
-        .env("ARMADA_RGB_CORRECTION", "always:0,20,20")
         .output()
         .unwrap();
 
@@ -186,16 +218,10 @@ fn cli_supports_channel_backend() {
 fn correction_preserves_the_user_color() {
     let fixture: Fixture = Fixture::new();
     fixture.target("rgb:sticks", "red green blue", "255");
-    let binary: &str = env!("CARGO_BIN_EXE_armada-rgb");
     let run = |color: &str, correction: Option<&str>| {
-        let mut command: Command = Command::new(binary);
-        command
-            .args(["set", "--color", color, "--brightness", "100"])
-            .env("ARMADA_RGB_CONFIG_PATH", &fixture.config)
-            .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
-            .env("ARMADA_RGB_BACKEND", "multicolor")
-            .env("ARMADA_RGB_TARGETS", "rgb:sticks")
-            .env("ARMADA_RGB_CORRECTION", "red:0,20,20");
+        let mut command: Command =
+            fixture.command("multicolor", &["rgb:sticks"], Some("red:0,20,20"));
+        command.args(["set", "--color", color, "--brightness", "100"]);
         if let Some(correction) = correction {
             command.args(["--correction", correction]);
         }
@@ -299,14 +325,10 @@ fn unsupported_devices_are_ignored_during_boot() {
 fn cli_sets_gets_and_turns_off() {
     let fixture: Fixture = Fixture::new();
     fixture.target("rgb:l1", "blue green red", "255");
-    let binary: &str = env!("CARGO_BIN_EXE_armada-rgb");
     let run = |args: &[&str]| {
-        Command::new(binary)
+        fixture
+            .command("multicolor", &["rgb:l1"], None)
             .args(args)
-            .env("ARMADA_RGB_CONFIG_PATH", &fixture.config)
-            .env("ARMADA_RGB_SYSFS_ROOT", &fixture.leds)
-            .env("ARMADA_RGB_BACKEND", "multicolor")
-            .env("ARMADA_RGB_TARGETS", "rgb:l1")
             .output()
             .unwrap()
     };
@@ -327,5 +349,24 @@ fn cli_sets_gets_and_turns_off() {
     assert!(!config.enabled);
 
     let output: std::process::Output = run(&["set", "--color", "FFFFFF", "--brightness", "101"]);
+    assert!(!output.status.success());
+}
+
+#[test]
+fn cli_reports_profile_support() {
+    let fixture: Fixture = Fixture::new();
+    let output: std::process::Output = fixture
+        .command("multicolor", &["rgb:l1"], None)
+        .arg("supported")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+
+    fs::write(&fixture.model, b"Unknown Device\0").unwrap();
+    let output: std::process::Output = fixture
+        .command("multicolor", &["rgb:l1"], None)
+        .arg("supported")
+        .output()
+        .unwrap();
     assert!(!output.status.success());
 }

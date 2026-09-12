@@ -80,6 +80,7 @@ jobs:
       # Opt-in lives in each build.sh: only those that wire up ccache populate
       # this per-package dir.
       - name: ccache
+        if: inputs.package != 'steam-bootstrap'
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}

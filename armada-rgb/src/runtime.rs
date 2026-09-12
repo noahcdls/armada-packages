@@ -1,131 +1,120 @@
 use crate::{ChannelBackend, ColorCorrection, LightingBackend, MulticolorBackend};
 use anyhow::{bail, Context, Result};
-use std::collections::HashMap;
+use serde::Deserialize;
+use std::collections::HashSet;
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const CONFIG_PATH: &str = "/etc/armada/rgb.json";
+const MODEL_PATH: &str = "/sys/firmware/devicetree/base/model";
+const PROFILE_VERSION: u32 = 1;
+const PROFILES_PATH: &str = "/usr/share/armada-rgb/profiles.json";
 const SYSFS_ROOT: &str = "/sys/class/leds";
-const DEVICE_ENV: &str = "/usr/libexec/armada/device-env";
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ProfileCatalog {
+    version: u32,
+    profiles: Vec<DeviceProfile>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeviceProfile {
+    models: Vec<String>,
+    backend: BackendProfile,
+    #[serde(default)]
+    correction: Option<ColorCorrection>,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+enum BackendProfile {
+    Channels { targets: Vec<String> },
+    Multicolor { targets: Vec<String> },
+}
 
 pub(crate) fn from_env() -> (PathBuf, LightingBackend) {
     let config_path: PathBuf = env::var_os("ARMADA_RGB_CONFIG_PATH")
         .map(PathBuf::from)
         .unwrap_or_else(|| CONFIG_PATH.into());
+    let model_path: PathBuf = env::var_os("ARMADA_RGB_MODEL_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| MODEL_PATH.into());
+    let profiles_path: PathBuf = env::var_os("ARMADA_RGB_PROFILES_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PROFILES_PATH.into());
     let sysfs_root: PathBuf = env::var_os("ARMADA_RGB_SYSFS_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| SYSFS_ROOT.into());
-    let device_env: PathBuf = env::var_os("ARMADA_RGB_DEVICE_ENV")
-        .or_else(|| env::var_os("ARMADA_DEVICE_ENV"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| DEVICE_ENV.into());
-    let backend_override: Option<String> = env::var("ARMADA_RGB_BACKEND").ok();
-    let targets_override: Option<String> = env::var("ARMADA_RGB_TARGETS").ok();
-    let correction_override: Option<String> = env::var("ARMADA_RGB_CORRECTION").ok();
 
-    let helper: Result<HashMap<String, String>> =
-        if backend_override.is_some() && targets_override.is_some() {
-            Ok(HashMap::new())
-        } else {
-            read_device_env(&device_env)
-        };
-    let (values, helper_error): (HashMap<String, String>, Option<String>) = match helper {
-        Ok(values) => (values, None),
-        Err(error) => (HashMap::new(), Some(format!("{error:#}"))),
-    };
-    let backend_name: String = backend_override
-        .or_else(|| values.get("ARMADA_RGB_BACKEND").cloned())
-        .unwrap_or_default();
-    let target_names: String = targets_override
-        .or_else(|| values.get("ARMADA_RGB_TARGETS").cloned())
-        .unwrap_or_default();
-    let targets: Vec<String> = target_names.split_whitespace().map(str::to_owned).collect();
-    let correction: Option<ColorCorrection> = match correction_override
-        .or_else(|| values.get("ARMADA_RGB_CORRECTION").cloned())
-        .filter(|value| !value.is_empty())
-        .map(|value| value.parse())
-        .transpose()
-    {
-        Ok(correction) => correction,
-        Err(error) => {
-            return (
-                config_path,
-                LightingBackend::Unsupported(format!("{error:#}")),
-            )
-        }
-    };
-
-    let backend: LightingBackend = match backend_name.as_str() {
-        "channels" if !targets.is_empty() => LightingBackend::Channels(
-            ChannelBackend::new(sysfs_root, targets).with_correction(correction),
-        ),
-        "channels" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
-        "multicolor" if !targets.is_empty() => LightingBackend::Multicolor(
-            MulticolorBackend::new(sysfs_root, targets).with_correction(correction),
-        ),
-        "multicolor" => LightingBackend::Unsupported("device profile has no RGB targets".into()),
-        "" => LightingBackend::Unsupported(
-            helper_error.unwrap_or_else(|| "device profile has no RGB backend".into()),
-        ),
-        backend => LightingBackend::Unsupported(format!("unsupported RGB backend '{backend}'")),
-    };
-
+    let backend: LightingBackend = load_backend(&profiles_path, &model_path, sysfs_root)
+        .unwrap_or_else(|error| LightingBackend::Unsupported(format!("{error:#}")));
     (config_path, backend)
 }
 
-fn read_device_env(path: &Path) -> Result<HashMap<String, String>> {
-    let output: std::process::Output = Command::new(path)
-        .output()
-        .with_context(|| format!("run {}", path.display()))?;
-    if !output.status.success() {
-        bail!("{} exited with {}", path.display(), output.status);
+fn load_backend(profiles_path: &Path, model_path: &Path, root: PathBuf) -> Result<LightingBackend> {
+    let input: String = fs::read_to_string(profiles_path)
+        .with_context(|| format!("read RGB profiles from {}", profiles_path.display()))?;
+    let catalog: ProfileCatalog = parse_catalog(&input)?;
+    let model: String = fs::read_to_string(model_path)
+        .with_context(|| format!("read device model from {}", model_path.display()))?;
+    let model: &str =
+        model.trim_matches(|character: char| character == '\0' || character.is_whitespace());
+    if model.is_empty() {
+        bail!("device model is empty");
     }
 
-    let output: String =
-        String::from_utf8(output.stdout).context("device-env output is not UTF-8")?;
-    parse_device_env(&output)
-}
+    let profile: DeviceProfile = catalog
+        .profiles
+        .into_iter()
+        .find(|profile| profile.models.iter().any(|candidate| candidate == model))
+        .with_context(|| format!("device model '{model}' has no RGB profile"))?;
+    profile
+        .correction
+        .as_ref()
+        .map(ColorCorrection::validate)
+        .transpose()?;
 
-fn parse_device_env(output: &str) -> Result<HashMap<String, String>> {
-    const WANTED: [&str; 3] = [
-        "ARMADA_RGB_BACKEND",
-        "ARMADA_RGB_TARGETS",
-        "ARMADA_RGB_CORRECTION",
-    ];
-    let mut values: HashMap<String, String> = HashMap::new();
-
-    for line in output.lines() {
-        let Some((name, value)) = line.split_once('=') else {
-            continue;
-        };
-        if WANTED.contains(&name) {
-            values.insert(name.into(), unquote(value)?);
+    match profile.backend {
+        BackendProfile::Channels { targets } if !targets.is_empty() => {
+            Ok(LightingBackend::Channels(
+                ChannelBackend::new(root, targets).with_correction(profile.correction),
+            ))
+        }
+        BackendProfile::Multicolor { targets } if !targets.is_empty() => {
+            Ok(LightingBackend::Multicolor(
+                MulticolorBackend::new(root, targets).with_correction(profile.correction),
+            ))
+        }
+        BackendProfile::Channels { .. } | BackendProfile::Multicolor { .. } => {
+            bail!("device profile has no RGB targets")
         }
     }
-    Ok(values)
 }
 
-fn unquote(value: &str) -> Result<String> {
-    if matches!(value, "''" | "\"\"") {
-        return Ok(String::new());
+fn parse_catalog(input: &str) -> Result<ProfileCatalog> {
+    let catalog: ProfileCatalog = serde_json::from_str(input).context("parse RGB profiles")?;
+    if catalog.version != PROFILE_VERSION {
+        bail!("unsupported RGB profile version {}", catalog.version);
     }
 
-    let mut result: String = String::new();
-    let mut chars: std::str::Chars<'_> = value.chars();
-    let mut quote: Option<char> = None;
-    while let Some(character) = chars.next() {
-        match (quote, character) {
-            (None | Some('"'), '\\') => result.push(chars.next().context("trailing escape")?),
-            (None, '\'' | '"') => quote = Some(character),
-            (Some(open), character) if open == character => quote = None,
-            _ => result.push(character),
+    let mut models: HashSet<&str> = HashSet::new();
+    for profile in &catalog.profiles {
+        if profile.models.is_empty() {
+            bail!("RGB profile has no device models");
+        }
+        for model in &profile.models {
+            if model.is_empty() {
+                bail!("RGB profile has an empty device model");
+            }
+            if !models.insert(model) {
+                bail!("duplicate RGB profile for device model '{model}'");
+            }
         }
     }
-    if quote.is_some() {
-        bail!("unterminated quote in device-env value");
-    }
-    Ok(result)
+    Ok(catalog)
 }
 
 #[cfg(test)]
@@ -133,13 +122,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_device_env_output() {
-        let values: HashMap<String, String> = parse_device_env(
-            "ARMADA_RGB_BACKEND=channels\nARMADA_RGB_TARGETS=red=l:r1\\ green=l:g1\nARMADA_RGB_CORRECTION=red:0\\,20\\,20\n",
+    fn packaged_profiles_cover_current_devices() {
+        let catalog: ProfileCatalog = parse_catalog(include_str!("../profiles.json")).unwrap();
+        for model in [
+            "AYN Odin 2 Portal",
+            "AYN Thor",
+            "AYN Thor Lite",
+            "AYN Odin 3",
+            "KONKR Pocket FIT Elite",
+            "Retroid Pocket 5",
+            "Retroid Pocket 5 Visionox",
+            "Retroid Pocket Flip2",
+            "Retroid Pocket Flip2 Visionox",
+            "Retroid Pocket 6",
+            "Retroid Pocket 6 TOP-DPAD",
+            "Retroid Pocket Nova",
+        ] {
+            assert!(catalog
+                .profiles
+                .iter()
+                .any(|profile| profile.models.iter().any(|candidate| candidate == model)));
+        }
+    }
+
+    #[test]
+    fn validates_catalog_version_and_models() {
+        assert!(parse_catalog(r#"{"version":2,"profiles":[]}"#).is_err());
+        assert!(parse_catalog(
+            r#"{"version":1,"profiles":[{"models":[],"backend":{"type":"multicolor","targets":["rgb:l1"]}}]}"#,
         )
-        .unwrap();
-        assert_eq!(values["ARMADA_RGB_BACKEND"], "channels");
-        assert_eq!(values["ARMADA_RGB_TARGETS"], "red=l:r1 green=l:g1");
-        assert_eq!(values["ARMADA_RGB_CORRECTION"], "red:0,20,20");
+        .is_err());
+        assert!(parse_catalog(
+            r#"{"version":1,"profiles":[{"models":["test"],"backend":{"type":"multicolor","targets":["rgb:l1"]}},{"models":["test"],"backend":{"type":"channels","targets":["red=l:r1"]}}]}"#,
+        )
+        .is_err());
     }
 }

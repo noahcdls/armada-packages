@@ -18,8 +18,9 @@
 0059-drm-panel-add-brightness-levels-helper.patch
 0060-drm-panel-icna35xx-luminance-linear-backlight-scale.patch
 0062-gpu-drm-panel-add-wt0630-panel.patch
+0063-gpu-drm-panel-add-wt0600-1k-panel.patch
 0104-drm-panel-Add-Retroid-Pocket-6-panel.patch
-0104a-drm-panel-visionox-vtdr6130-add-flip2.patch
+0104a-drm-panel-visionox-vtdr6130-add-sm8250.patch
 0105-drm-panel-Add-Retroid-Pocket-Nova-panel.patch
 0106-drm-panel-il97680a-luminance-linear-backlight-scale.patch
 
@@ -108,6 +109,8 @@ v9_20260729_qualcomm_crypto_qce_runtime_pm_interconnect.patch
 0500-ROCKNIX-set-boot-fanspeed.patch
 0501-ROCKNIX-fix-wifi-and-bt-mac.patch
 0503-ROCKNIX-battery-name.patch
+0901-power-supply-qcom-battmgr-fix-charge-unit.patch
+0902-power-supply-qcom-battmgr-expose-charge-now.patch
 
 # ============== SM8650 (AYANEO Pocket S2, KONKR Pocket FIT) ==============
 0001-pcie-update-sm8650-dtsi.patch
