@@ -67,3 +67,4 @@ diff --git a/drivers/tty/serial/qcom_geni_serial.c b/drivers/tty/serial/qcom_gen
  	if (uart_console(uport)) {
  		geni_icc_set_tag(&port->se, QCOM_ICC_TAG_ALWAYS);
  		geni_icc_set_bw(&port->se);
+
