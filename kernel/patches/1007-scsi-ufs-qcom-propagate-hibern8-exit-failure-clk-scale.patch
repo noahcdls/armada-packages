@@ -21,7 +21,7 @@ Signed-off-by: jaewun <jaewun@users.noreply.github.com>
 diff --git a/drivers/ufs/host/ufs-qcom.c b/drivers/ufs/host/ufs-qcom.c
 --- a/drivers/ufs/host/ufs-qcom.c
 +++ b/drivers/ufs/host/ufs-qcom.c
-@@ -1779,8 +1779,8 @@
+@@ -1947,8 +1947,8 @@
  		}
  
  		ufs_qcom_icc_update_bw(host);

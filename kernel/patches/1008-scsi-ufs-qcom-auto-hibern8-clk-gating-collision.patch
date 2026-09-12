@@ -17,7 +17,7 @@ Signed-off-by: jaewun <jaewun@users.noreply.github.com>
 ---
 --- a/drivers/ufs/host/ufs-qcom.c
 +++ b/drivers/ufs/host/ufs-qcom.c
-@@ -1157,6 +1157,18 @@
+@@ -1320,6 +1320,18 @@
  
  	if (drvdata && drvdata->quirks)
  		hba->quirks |= drvdata->quirks;
